@@ -1,14 +1,27 @@
 import { useEffect, useRef, useState } from 'react'
 import { useNavigate, useLocation } from 'react-router-dom'
 import { submitForm } from '../lib/formHandler'
+import type { PageSEO } from '../lib/seoConfig'
 
 interface Props {
   htmlFile: string
-  title: string
-  description: string
+  seo: PageSEO
 }
 
-export default function WebflowPage({ htmlFile, title, description }: Props) {
+/** Create or update a <meta> tag in <head> */
+function setMeta(attr: string, attrValue: string, content: string) {
+  let el = document.querySelector(`meta[${attr}="${attrValue}"]`)
+  if (!el) {
+    el = document.createElement('meta')
+    el.setAttribute(attr, attrValue)
+    document.head.appendChild(el)
+  }
+  el.setAttribute('content', content)
+}
+
+const SITE_URL = 'https://12brave.com'
+
+export default function WebflowPage({ htmlFile, seo }: Props) {
   const containerRef = useRef<HTMLDivElement>(null)
   const [html, setHtml] = useState<string>('')
   const [loading, setLoading] = useState(true)
@@ -27,27 +40,68 @@ export default function WebflowPage({ htmlFile, title, description }: Props) {
       .catch(() => setLoading(false))
   }, [htmlFile])
 
-  // Set document title and meta description
+  // Set SEO tags: title, description, OG, Twitter, canonical, robots, JSON-LD
   useEffect(() => {
-    document.title = title
+    const pageUrl = `${SITE_URL}${location.pathname}`
 
-    let metaDesc = document.querySelector('meta[name="description"]')
-    if (!metaDesc) {
-      metaDesc = document.createElement('meta')
-      metaDesc.setAttribute('name', 'description')
-      document.head.appendChild(metaDesc)
+    // Title
+    document.title = seo.title
+
+    // Meta description
+    setMeta('name', 'description', seo.description)
+
+    // Robots (noindex for utility pages)
+    if (seo.noindex) {
+      setMeta('name', 'robots', 'noindex, nofollow')
+    } else {
+      const robotsMeta = document.querySelector('meta[name="robots"]')
+      if (robotsMeta) robotsMeta.remove()
     }
-    metaDesc.setAttribute('content', description)
 
-    // Set canonical
+    // Canonical
     let canonical = document.querySelector('link[rel="canonical"]') as HTMLLinkElement
     if (!canonical) {
       canonical = document.createElement('link')
       canonical.setAttribute('rel', 'canonical')
       document.head.appendChild(canonical)
     }
-    canonical.setAttribute('href', `https://12brave.com${location.pathname}`)
-  }, [title, description, location.pathname])
+    canonical.setAttribute('href', pageUrl)
+
+    // Open Graph tags
+    setMeta('property', 'og:title', seo.ogTitle || seo.title)
+    setMeta('property', 'og:description', seo.ogDescription || seo.description)
+    setMeta('property', 'og:url', pageUrl)
+    setMeta('property', 'og:type', seo.ogType || 'website')
+    setMeta('property', 'og:site_name', '12BRAVE')
+    if (seo.ogImage) {
+      setMeta('property', 'og:image', seo.ogImage)
+    }
+
+    // Twitter Card tags
+    setMeta('name', 'twitter:card', seo.twitterCard || 'summary')
+    setMeta('name', 'twitter:title', seo.ogTitle || seo.title)
+    setMeta('name', 'twitter:description', seo.ogDescription || seo.description)
+    if (seo.ogImage) {
+      setMeta('name', 'twitter:image', seo.ogImage)
+    }
+
+    // JSON-LD structured data
+    const existingLd = document.querySelector('script[data-seo-jsonld]')
+    if (existingLd) existingLd.remove()
+    if (seo.jsonLd) {
+      const script = document.createElement('script')
+      script.setAttribute('type', 'application/ld+json')
+      script.setAttribute('data-seo-jsonld', 'true')
+      script.textContent = JSON.stringify(seo.jsonLd)
+      document.head.appendChild(script)
+    }
+
+    // Cleanup JSON-LD on unmount
+    return () => {
+      const ld = document.querySelector('script[data-seo-jsonld]')
+      if (ld) ld.remove()
+    }
+  }, [seo, location.pathname])
 
   // Intercept internal links for SPA navigation + handle form submissions
   useEffect(() => {

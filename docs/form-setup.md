@@ -10,6 +10,8 @@ Forms are pre-configured to work with two services. No accounts to create, no AP
 
 **No account, no API key, no configuration required.**
 
+**Privacy note:** FormSubmit.co is a third-party service that processes form submission data in order to deliver it via email. If your privacy policy or GDPR obligations require disclosure of third-party data processors, add FormSubmit.co (https://formsubmit.co) to your list of sub-processors.
+
 ## Spreadsheet Logging (Supabase)
 
 **How it works:** Every form submission is also inserted into a `form_submissions` table in Supabase. Lovable has built-in Supabase integration.

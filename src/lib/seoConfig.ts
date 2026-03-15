@@ -155,7 +155,6 @@ export const SEO_MAP: Record<string, PageSEO> = {
   '/thank-you': {
     title: 'Thank You - Your Download is Ready | 12BRAVE',
     description: 'Thank you for your submission. Download your 12BRAVE resource below.',
-    noindex: true,
     ogType: 'website',
     twitterCard: 'summary',
   },
@@ -187,14 +186,12 @@ export const SEO_MAP: Record<string, PageSEO> = {
   '/download/guide': {
     title: 'Download Your Guide | 12BRAVE',
     description: 'Download the 12BRAVE guide - How to Make 5K Euro from Your Own Project in 12 Weeks.',
-    noindex: true,
     ogType: 'website',
     twitterCard: 'summary',
   },
   '/download/program': {
     title: 'Download Program Curriculum | 12BRAVE',
     description: 'Download the 12BRAVE program curriculum - a 12-week entrepreneurship course for working professionals.',
-    noindex: true,
     ogType: 'website',
     twitterCard: 'summary',
   },

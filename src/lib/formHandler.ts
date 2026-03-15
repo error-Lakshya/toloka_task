@@ -1,13 +1,15 @@
 /**
  * Form submission handler for 12BRAVE.
  *
- * Two destinations, both work out-of-the-box:
- * 1. Email to team@12brave.com via FormSubmit.co (no account needed)
- * 2. Supabase `form_submissions` table (Lovable auto-connects Supabase)
+ * 1. Email to team@12brave.com via FormSubmit.co
+ *    - Works out-of-the-box, no account or API key needed.
+ *    - ONE-TIME SETUP: After the first submission, FormSubmit.co sends
+ *      a verification email to team@12brave.com. Click the link to activate.
  *
- * ONE-TIME SETUP: After the very first form submission, FormSubmit.co
- * sends a verification email to team@12brave.com. Click the link in
- * that email to activate. All subsequent submissions deliver instantly.
+ * 2. Spreadsheet logging via Supabase `form_submissions` table
+ *    - REQUIRES: Connect Supabase in Lovable (one-click) + run migration SQL.
+ *    - If Supabase is not connected, email still works; only logging is skipped.
+ *    - Submissions exportable as CSV (opens in Excel/Google Sheets).
  */
 
 import { createClient } from '@supabase/supabase-js'

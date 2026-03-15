@@ -1,6 +1,4 @@
 User-agent: *
 Allow: /
-Disallow: /download/
-Disallow: /thank-you
 
 Sitemap: https://12brave.com/sitemap.xml

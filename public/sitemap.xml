@@ -26,11 +26,6 @@
     <changefreq>monthly</changefreq>
   </url>
   <url>
-    <loc>https://12brave.com/thank-you</loc>
-    <priority>0.2</priority>
-    <changefreq>yearly</changefreq>
-  </url>
-  <url>
     <loc>https://12brave.com/privacy-policy---12brave</loc>
     <priority>0.3</priority>
     <changefreq>yearly</changefreq>
@@ -44,15 +39,5 @@
     <loc>https://12brave.com/topplatforms</loc>
     <priority>0.6</priority>
     <changefreq>monthly</changefreq>
-  </url>
-  <url>
-    <loc>https://12brave.com/download/guide</loc>
-    <priority>0.2</priority>
-    <changefreq>yearly</changefreq>
-  </url>
-  <url>
-    <loc>https://12brave.com/download/program</loc>
-    <priority>0.2</priority>
-    <changefreq>yearly</changefreq>
   </url>
 </urlset>

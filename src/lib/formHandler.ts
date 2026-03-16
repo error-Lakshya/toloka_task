@@ -1,10 +1,10 @@
 /**
  * Form submission handler for 12BRAVE.
  *
- * 1. Email to team@12brave.com via FormSubmit.co (out-of-the-box)
- * 2. Google Sheet logging via Apps Script web app (centralized Excel table)
- *    - Customer setup: create sheet, paste script, deploy, set env var (~5 min)
- *    - All submissions from all visitors stored in one central spreadsheet
+ * 1. Email to team@12brave.com via FormSubmit.co (zero setup)
+ * 2. Google Sheet logging via Apps Script (zero setup — endpoint hardcoded)
+ *    - All submissions from all visitors stored in one central Google Sheet
+ *    - Sheet: https://docs.google.com/spreadsheets/d/1KR1S16ff10N3WmtblLAHt_eZKKZJRHbKjqsyTCsUobU
  * 3. Optional: Supabase as additional centralized storage
  */
 

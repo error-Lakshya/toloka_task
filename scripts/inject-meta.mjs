@@ -1,28 +1,27 @@
 /**
- * Post-build script: injects per-page SEO meta tags into static HTML files.
+ * Post-build script: generates fully static HTML pages and cleans the build output.
  *
- * For each route in SEO_MAP, creates a copy of dist/index.html at the
- * correct path (e.g., dist/about-us/index.html) with the real <title>,
- * <meta description>, <link canonical>, OG/Twitter tags, and JSON-LD
- * baked into the <head>. This ensures crawlers, social bots, and link
- * unfurlers see correct meta tags without executing JavaScript.
+ * 1. Generates fully static HTML for all 11 routes with pre-rendered body content and SEO meta tags.
+ * 2. Cleans the build output by removing any unnecessary *.orig backup files.
  *
  * Run after `vite build`: node scripts/inject-meta.mjs
  */
 
-import { readFileSync, writeFileSync, mkdirSync, existsSync } from 'fs'
+import { readFileSync, writeFileSync, mkdirSync, existsSync, readdirSync, unlinkSync } from 'fs'
 import { join, dirname } from 'path'
 import { fileURLToPath } from 'url'
 
 const __dirname = dirname(fileURLToPath(import.meta.url))
 const DIST = join(__dirname, '..', 'dist')
+const PUBLIC = join(__dirname, '..', 'public')
 const SITE_URL = 'https://12brave.com'
 const OG_IMAGE = 'https://cdn.prod.website-files.com/687fa761be60df02646a1dc0/68d0378c1ed599b79a0398c6_Screenshot%202025-09-21%20193552.png'
 
-// SEO data for all 11 routes (must match src/lib/seoConfig.ts)
+// SEO and content mapping for all 11 routes
 const pages = [
   {
     path: '/',
+    htmlFile: 'home.html',
     title: 'Side Business Course for Professionals | 12BRAVE Program',
     description: 'Start your side business without quitting your job. 12BRAVE: 12-week entrepreneurship program for European professionals. Mentoring, community, real results.',
     ogTitle: '12BRAVE: Side Business Program for Working Professionals',
@@ -33,6 +32,7 @@ const pages = [
   },
   {
     path: '/about-us',
+    htmlFile: 'about-us.html',
     title: 'About us | 12BRAVE',
     description: 'Meet the founders of 12BRAVE - former corporate managers helping European professionals launch side businesses in 12 weeks with mentoring and community support.',
     ogTitle: 'About 12BRAVE - Our Story & Founders',
@@ -43,6 +43,7 @@ const pages = [
   },
   {
     path: '/blog',
+    htmlFile: 'blog.html',
     title: 'Blog | 12BRAVE',
     description: '12BRAVE blog - interviews with founders and mentors, case studies, and practical resources for aspiring side-business founders in Europe.',
     ogTitle: '12BRAVE Blog - Stories & Resources for Side-Business Founders',
@@ -53,6 +54,7 @@ const pages = [
   },
   {
     path: '/blog/founders-of-12brave-interview',
+    htmlFile: 'blog-founders.html',
     title: 'Founders of 12BRAVE: "We wanted to create a real impact" | 12BRAVE',
     description: 'Interview with Ekaterina and Victoria, co-founders of 12BRAVE, on why they left corporate careers to build an entrepreneurship program for professionals across Europe.',
     ogTitle: 'Founders of 12BRAVE: "We wanted to create a real impact"',
@@ -63,6 +65,7 @@ const pages = [
   },
   {
     path: '/blog/interview-mariia-lukianova',
+    htmlFile: 'blog-mariia.html',
     title: 'How to make your project a fun hobby that pays you - Mariia Lukianova | 12BRAVE',
     description: 'From corporate R&D to charity and startup fundraising - 12BRAVE mentor Mariia Lukianova on turning a side project into a rewarding hobby that generates income.',
     ogTitle: 'How to make your project a fun hobby that pays you - Mariia Lukianova',
@@ -73,12 +76,14 @@ const pages = [
   },
   {
     path: '/thank-you',
+    htmlFile: 'thank-you.html',
     title: 'Thank You - Your Download is Ready | 12BRAVE',
     description: 'Thank you for your submission. Download your 12BRAVE resource below.',
     ogType: 'website',
   },
   {
     path: '/privacy-policy---12brave',
+    htmlFile: 'privacy-policy.html',
     title: 'Privacy Policy - 12BRAVE',
     description: 'Privacy Policy for the 12BRAVE entrepreneurship program. Learn how we collect, use, and protect your personal data.',
     ogTitle: 'Privacy Policy - 12BRAVE',
@@ -87,6 +92,7 @@ const pages = [
   },
   {
     path: '/terms',
+    htmlFile: 'terms.html',
     title: 'Terms & Conditions | 12BRAVE',
     description: 'Terms and Conditions for the 12BRAVE entrepreneurship program - participation rules, refund policy, intellectual property, and data handling.',
     ogTitle: 'Terms & Conditions - 12BRAVE',
@@ -95,6 +101,7 @@ const pages = [
   },
   {
     path: '/topplatforms',
+    htmlFile: 'topplatforms.html',
     title: '5K Guide - Top 50 Platforms to Earn Your First 5K | 12BRAVE',
     description: 'Download the free Top 50 Platforms List from 12BRAVE - curated platforms to help you earn your first 5,000 euros from a side project.',
     ogTitle: 'Free Guide: Top 50 Platforms to Earn Your First 5K',
@@ -104,30 +111,34 @@ const pages = [
   },
   {
     path: '/download/guide',
+    htmlFile: 'download-guide.html',
     title: 'Download Your Guide | 12BRAVE',
     description: 'Download the 12BRAVE guide - How to Make 5K Euro from Your Own Project in 12 Weeks.',
     ogType: 'website',
   },
   {
     path: '/download/program',
+    htmlFile: 'download-program.html',
     title: 'Download Program Curriculum | 12BRAVE',
     description: 'Download the 12BRAVE program curriculum - a 12-week entrepreneurship course for working professionals.',
     ogType: 'website',
   },
 ]
 
-// Read the base index.html template
+// Read the base index.html template from the build output
 const template = readFileSync(join(DIST, 'index.html'), 'utf-8')
 
-let count = 0
+let pageCount = 0
 for (const page of pages) {
   const url = `${SITE_URL}${page.path}`
   const ogTitle = page.ogTitle || page.title
   const ogDesc = page.ogDescription || page.description
 
-  // Build meta tags block
-  const metaTags = [
-    `<title>${page.title}</title>`,
+  // Read the body-only HTML fragment for this page
+  const bodyContent = readFileSync(join(PUBLIC, 'html', page.htmlFile), 'utf-8')
+
+  // Build meta tags block (without title)
+  const metaTagsWithoutTitle = [
     `<meta name="description" content="${page.description}" />`,
     `<link rel="canonical" href="${url}" />`,
     `<meta property="og:title" content="${ogTitle}" />`,
@@ -143,19 +154,32 @@ for (const page of pages) {
     page.jsonLd ? `<script type="application/ld+json">${JSON.stringify(page.jsonLd)}</script>` : '',
   ].filter(Boolean).join('\n    ')
 
-  // Replace the generic <title> and inject meta tags before </head>
+  // 1. Replace the existing <title> tag
   let html = template.replace(
-    '<title>12BRAVE</title>',
-    metaTags
+    /<title>.*?<\/title>/,
+    `<title>${page.title}</title>`
+  )
+  
+  // 2. Inject all other meta tags before </head>
+  html = html.replace(
+    '</head>',
+    `    ${metaTagsWithoutTitle}\n  </head>`
+  )
+
+  // 3. Inject the body content into the <div id="root"></div>
+  html = html.replace(
+    '<div id="root"></div>',
+    `<div id="root">${bodyContent}</div>`
   )
 
   // Determine output path
   let outDir, outFile
   if (page.path === '/') {
+    // Overwrite the root index.html
     outDir = DIST
     outFile = join(DIST, 'index.html')
   } else {
-    // /about-us -> dist/about-us/index.html
+    // Create per-route folders (e.g., dist/about-us/index.html)
     outDir = join(DIST, ...page.path.split('/').filter(Boolean))
     outFile = join(outDir, 'index.html')
   }
@@ -164,7 +188,27 @@ for (const page of pages) {
     mkdirSync(outDir, { recursive: true })
   }
   writeFileSync(outFile, html, 'utf-8')
-  count++
+  pageCount++
 }
 
-console.log(`inject-meta: generated ${count} pages with static SEO tags`)
+console.log(`inject-meta: generated ${pageCount} pages with static SEO tags and pre-rendered content`)
+
+// --- Cleanup *.orig files ---
+let cleanupCount = 0
+function cleanupOrigFiles(dir) {
+  const files = readdirSync(dir, { withFileTypes: true })
+  for (const file of files) {
+    const fullPath = join(dir, file.name)
+    if (file.isDirectory()) {
+      cleanupOrigFiles(fullPath)
+    } else if (file.name.endsWith('.orig')) {
+      unlinkSync(fullPath)
+      cleanupCount++
+    }
+  }
+}
+
+cleanupOrigFiles(DIST)
+if (cleanupCount > 0) {
+  console.log(`inject-meta: cleaned up ${cleanupCount} *.orig backup files`)
+}

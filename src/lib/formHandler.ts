@@ -13,8 +13,8 @@ import { createClient } from '@supabase/supabase-js'
 // --- Email ---
 const FORMSUBMIT_URL = 'https://formsubmit.co/ajax/team@12brave.com'
 
-// --- Google Sheet logging (Apps Script web app) ---
-const SHEET_URL = import.meta.env.VITE_GOOGLE_SHEET_URL || ''
+// --- Google Sheet logging (Apps Script web app) — hardcoded, zero setup ---
+const SHEET_URL = 'https://script.google.com/macros/s/AKfycbyEmMmQjzwgw5ZG_IMkenczp21GlNwy1MwZ6ND5EixrYIzZ50o5kG3WCVZrnNvwbFI-/exec'
 
 // --- Supabase (optional) ---
 const supabaseUrl = import.meta.env.VITE_SUPABASE_URL || ''

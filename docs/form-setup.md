@@ -1,49 +1,77 @@
 # Form Submission Setup
 
-Forms are pre-configured to work with two services. No accounts to create, no API keys to generate.
-
-## Email Delivery (FormSubmit.co)
+## 1. Email Delivery (FormSubmit.co) - out-of-the-box
 
 **How it works:** Form submissions are sent to `https://formsubmit.co/ajax/team@12brave.com`. FormSubmit.co delivers the data as a formatted email to `team@12brave.com`.
 
-**One-time activation:** After the very first form submission on the live site, FormSubmit.co sends a verification email to `team@12brave.com`. Someone with access to that inbox must click the confirmation link. After that, all future submissions deliver instantly with no further action needed.
+**One-time activation:** After the very first form submission on the live site, FormSubmit.co sends a verification email to `team@12brave.com`. Someone with access to that inbox must click the confirmation link. After that, all future submissions deliver instantly.
 
 **No account, no API key, no configuration required.**
 
 **Privacy note:** FormSubmit.co is a third-party service that processes form submission data in order to deliver it via email. If your privacy policy or GDPR obligations require disclosure of third-party data processors, add FormSubmit.co (https://formsubmit.co) to your list of sub-processors.
 
-## Spreadsheet Logging (Supabase)
+## 2. Centralized Excel Table (Google Sheets) - 5-minute setup
 
-**How it works:** Every form submission is also inserted into a `form_submissions` table in Supabase. Lovable has built-in Supabase integration.
+Every form submission is logged as a row in a Google Sheet. The sheet is accessible to the entire 12BRAVE team and can be downloaded as Excel at any time.
 
-**Setup steps:**
+### Setup steps (5 minutes)
 
-1. In Lovable, click **Connect Supabase** (or go to Project Settings -> Integrations -> Supabase)
-2. Lovable auto-populates `VITE_SUPABASE_URL` and `VITE_SUPABASE_ANON_KEY`
-3. Open the Supabase Dashboard -> SQL Editor
-4. Paste and run the contents of `supabase/migrations/001_create_form_submissions.sql`
-5. Done. All form submissions now appear in the `form_submissions` table.
+**Step 1:** Create a new Google Sheet at https://sheets.google.com. Name it "12BRAVE Form Submissions".
 
-**Viewing/exporting data:** In Supabase Dashboard -> Table Editor -> `form_submissions`, you can view, filter, and export all submissions as CSV (which opens in Excel/Google Sheets).
+**Step 2:** Add these headers in row 1 (columns A through K):
 
-## Table Schema
+```
+Timestamp | Form Name | Page URL | Name | Email | Phone | LinkedIn | WhatsApp | Why Join | Discount Code | Message
+```
 
-| Column | Type | Description |
-|--------|------|-------------|
-| id | bigint | Auto-incrementing primary key |
-| submitted_at | timestamptz | Submission timestamp |
-| form_name | text | Which form was submitted (e.g., "wf-form-popup-signup") |
-| page_url | text | Page the form was on |
-| name | text | Submitter's full name |
-| email | text | Submitter's email |
-| phone | text | Phone number |
-| linkedin | text | LinkedIn profile URL |
-| whatsapp | text | WhatsApp number |
-| why_join | text | "Why do you want to join?" answer |
-| discount_code | text | Discount code (if provided) |
-| message | text | Free-text message (contact form) |
-| raw_data | jsonb | Complete raw form data (all fields) |
+**Step 3:** Go to **Extensions > Apps Script**. Delete any default code and paste this:
 
-## If Supabase is not connected
+```javascript
+function doPost(e) {
+  var sheet = SpreadsheetApp.getActiveSpreadsheet().getActiveSheet();
+  var data = JSON.parse(e.postData.contents);
+  sheet.appendRow([
+    data.submitted_at || new Date().toISOString(),
+    data.form_name || '',
+    data.page_url || '',
+    data.name || '',
+    data.email || '',
+    data.phone || '',
+    data.linkedin || '',
+    data.whatsapp || '',
+    data.why_join || '',
+    data.discount_code || '',
+    data.message || ''
+  ]);
+  return ContentService
+    .createTextOutput(JSON.stringify({ status: 'ok' }))
+    .setMimeType(ContentService.MimeType.JSON);
+}
+```
 
-Email delivery still works (FormSubmit.co is independent). Only the spreadsheet logging is skipped. A console warning is logged: "Supabase log failed (non-critical)".
+**Step 4:** Click **Deploy > New deployment**. Set type to **Web app**, execute as **Me**, access **Anyone**. Click **Deploy** and copy the URL (looks like `https://script.google.com/macros/s/.../exec`).
+
+**Step 5:** In Lovable, go to **Project Settings > Environment Variables** and add:
+
+```
+VITE_GOOGLE_SHEET_URL = https://script.google.com/macros/s/YOUR_ID/exec
+```
+
+Done. All form submissions now appear as rows in the Google Sheet automatically.
+
+### Viewing/exporting data
+
+- Open the Google Sheet directly (it updates in real time)
+- Download as Excel: **File > Download > Microsoft Excel (.xlsx)**
+- Download as CSV: **File > Download > Comma-separated values (.csv)**
+- Share with team: use standard Google Sheets sharing
+
+## 3. Optional: Supabase (additional centralized storage)
+
+If Lovable has Supabase connected (Project Settings > Integrations), submissions are also logged to a `form_submissions` table. Run the migration SQL in `supabase/migrations/001_create_form_submissions.sql` after connecting.
+
+This is optional and complementary to Google Sheets logging.
+
+## If Google Sheet URL is not set
+
+Email delivery still works (FormSubmit.co is independent). Only spreadsheet logging is skipped. A console warning is logged.

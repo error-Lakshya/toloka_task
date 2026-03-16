@@ -1,5 +1,6 @@
 import { Routes, Route } from 'react-router-dom'
 import WebflowPage from './components/WebflowPage'
+import ExportCSV from './pages/ExportCSV'
 import { PAGE_MAP, SEO_MAP } from './lib/seoConfig'
 
 export default function App() {
@@ -17,6 +18,7 @@ export default function App() {
           }
         />
       ))}
+      <Route path="/admin/export-csv" element={<ExportCSV />} />
     </Routes>
   )
 }
